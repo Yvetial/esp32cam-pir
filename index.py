@@ -36,6 +36,3 @@ def control_buzzer():
 
     # GET method returns current buzzer status
     return jsonify({"device": "buzzer", "status": device_status["buzzer"]})
-
-if __name__ == "__main__":
-app.run()
