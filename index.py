@@ -37,6 +37,5 @@ def control_buzzer():
     # GET method returns current buzzer status
     return jsonify({"device": "buzzer", "status": device_status["buzzer"]})
 
-# Handler untuk Vercel (serverless)
-def handler(environ, start_response):
-    return app(environ, start_response)
+if __name__ == "__main__":
+app.run()
