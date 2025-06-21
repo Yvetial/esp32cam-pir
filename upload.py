@@ -5,7 +5,7 @@ from datetime import datetime
 import glob
 
 
-app = Flask(__name__, static_folder="../static", template_folder="../templates")
+app = Flask(__name__)
 
 UPLOAD_FOLDER = "snapshots"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
