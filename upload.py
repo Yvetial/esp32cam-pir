@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, send_file, render_template
+from flask_cors import CORS
 import os
 import base64
 from datetime import datetime
@@ -6,6 +7,7 @@ import glob
 
 
 app = Flask(__name__)
+CORS(app)
 
 UPLOAD_FOLDER = "snapshots"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
