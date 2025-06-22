@@ -52,27 +52,35 @@ async function updateSnapshot() {
     const response = await fetch('/snapshot_latest?' + timestamp, { cache: 'no-store' });
 
     if (!response.ok) {
+      // Jangan langsung tampilkan error, tunggu beberapa retry
       throw new Error("ESP32-CAM belum menyala");
     }
 
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
-    container.innerHTML = `<img id="snapshotImage" src="${url}" alt="Snapshot ESP32-CAM" />`;
 
-    const img = container.querySelector('img');
-    img.onload = () => URL.revokeObjectURL(url);
-    retryCount = 0; // sukses, reset counter
+    const img = new Image();
+    img.src = url;
+    img.alt = "Snapshot ESP32-CAM";
+    img.onload = () => {
+      container.innerHTML = "";
+      container.appendChild(img);
+      URL.revokeObjectURL(url); // bersihkan memory
+      retryCount = 0; // reset error count
+    };
+    img.onerror = () => {
+      container.innerHTML = '<p class="error">Gagal menampilkan gambar</p>';
+    };
+
   } catch (error) {
     console.warn(error.message);
     retryCount++;
-    const container = document.getElementById('snapshot-container');
-    container.innerHTML = '<p class="error">ESP32-CAM anda belum menyala</p>';
 
     if (retryCount >= MAX_RETRY) {
       clearInterval(intervalId);
       isPollingStopped = true;
-      console.warn("Polling dihentikan. Akan cek status device secara berkala...");
-      scheduleReconnect(); // Coba reconnect nanti
+      container.innerHTML = '<p class="error">ESP32-CAM anda belum menyala</p>';
+      scheduleReconnect();
     }
   }
 }
@@ -84,7 +92,7 @@ function scheduleReconnect() {
       console.log("ESP32-CAM online kembali! Memulai polling ulang.");
       retryCount = 0;
       isPollingStopped = false;
-      intervalId = setInterval(updateSnapshot, 5000);
+      intervalId = setInterval(updateSnapshot, 3000);
       updateSnapshot();
     } else {
       console.log("ESP32-CAM masih offline. Coba lagi 30 detik.");
@@ -131,7 +139,7 @@ document.getElementById('btnBuzzerToggle').addEventListener('click', async () =>
 });
 
 // Mulai polling saat pertama kali halaman dibuka
-intervalId = setInterval(updateSnapshot, 5000);
+intervalId = setInterval(updateSnapshot, 3000);
 updateSnapshot();
 updateBuzzerUI();
 
