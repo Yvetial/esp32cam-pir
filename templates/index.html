@@ -84,7 +84,7 @@ function scheduleReconnect() {
       console.log("ESP32-CAM online kembali! Memulai polling ulang.");
       retryCount = 0;
       isPollingStopped = false;
-      intervalId = setInterval(updateSnapshot, 1000);
+      intervalId = setInterval(updateSnapshot, 5000);
       updateSnapshot();
     } else {
       console.log("ESP32-CAM masih offline. Coba lagi 30 detik.");
@@ -131,7 +131,7 @@ document.getElementById('btnBuzzerToggle').addEventListener('click', async () =>
 });
 
 // Mulai polling saat pertama kali halaman dibuka
-intervalId = setInterval(updateSnapshot, 1000);
+intervalId = setInterval(updateSnapshot, 5000);
 updateSnapshot();
 updateBuzzerUI();
 
