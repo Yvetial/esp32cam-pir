@@ -59,5 +59,6 @@ def snapshot_status():
     current_time = time.time()
     elapsed = current_time - last_snapshot_time
     if elapsed > 10:
+        last_snapshot_base64 = None
         return jsonify({"status": "old"}) 
     return jsonify({"status": "fresh"})  
