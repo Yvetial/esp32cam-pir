@@ -32,82 +32,109 @@
   </div>
 
   <script>
-    function sendCommand(device, status) {
-      return fetch('/device/' + device, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status: status })
-      }).then(res => res.json());
+    let intervalId = null;
+let retryCount = 0;
+const MAX_RETRY = 3;
+let isPollingStopped = false;
+
+function sendCommand(device, status) {
+  return fetch('/device/' + device, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  }).then(res => res.json());
+}
+
+async function updateSnapshot() {
+  const container = document.getElementById('snapshot-container');
+  try {
+    const timestamp = new Date().getTime();
+    const response = await fetch('/snapshot_latest?' + timestamp, { cache: 'no-store' });
+
+    if (!response.ok) {
+      throw new Error("ESP32-CAM belum menyala");
     }
 
-    async function updateSnapshot() {
-      const container = document.getElementById('snapshot-container');
-      try {
-        const timestamp = new Date().getTime();
-        const response = await fetch('/snapshot_latest?' + timestamp, { cache: 'no-store' });
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    container.innerHTML = `<img id="snapshotImage" src="${url}" alt="Snapshot ESP32-CAM" />`;
 
-        if (!response.ok) {
-          container.innerHTML = '<p class="error">ESP32-CAM anda belum menyala</p>';
-          return;
-        }
+    const img = container.querySelector('img');
+    img.onload = () => URL.revokeObjectURL(url);
+    retryCount = 0; // sukses, reset counter
+  } catch (error) {
+    console.warn(error.message);
+    retryCount++;
+    const container = document.getElementById('snapshot-container');
+    container.innerHTML = '<p class="error">ESP32-CAM anda belum menyala</p>';
 
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        container.innerHTML = `<img id="snapshotImage" src="${url}" alt="Snapshot ESP32-CAM" />`;
-
-        const img = container.querySelector('img');
-        img.onload = () => URL.revokeObjectURL(url);
-
-      } catch (error) {
-        container.innerHTML = '<p class="error">Gagal mengambil snapshot, cek koneksi.</p>';
-      }
+    if (retryCount >= MAX_RETRY) {
+      clearInterval(intervalId);
+      isPollingStopped = true;
+      console.warn("Polling dihentikan. Akan cek status device secara berkala...");
+      scheduleReconnect(); // Coba reconnect nanti
     }
+  }
+}
 
-    setInterval(updateSnapshot, 5000);
-    updateSnapshot();
-
-    async function getDeviceStatus(device) {
-      try {
-        const response = await fetch('/device/' + device);
-        if (!response.ok) {
-          throw new Error('Failed to get device status');
-        }
-        const data = await response.json();
-        return data.status;
-      } catch (err) {
-        console.error('Failed to get device status:', err);
-        return null;
-      }
+function scheduleReconnect() {
+  setTimeout(async () => {
+    const status = await getDeviceStatus('camera');
+    if (status === 'online') {
+      console.log("ESP32-CAM online kembali! Memulai polling ulang.");
+      retryCount = 0;
+      isPollingStopped = false;
+      intervalId = setInterval(updateSnapshot, 5000);
+      updateSnapshot();
+    } else {
+      console.log("ESP32-CAM masih offline. Coba lagi 30 detik.");
+      scheduleReconnect(); // Coba lagi nanti
     }
+  }, 30000); // cek ulang tiap 30 detik
+}
 
-    async function updateBuzzerUI() {
-      const buzzerToggle = document.getElementById('btnBuzzerToggle');
-      const status = await getDeviceStatus('buzzer');
-      if (status === 'on') {
-        buzzerToggle.textContent = 'Matikan Buzzer';
-        buzzerToggle.classList.remove('btn-primary');
-        buzzerToggle.classList.add('btn-danger');
-      } else if (status === 'off') {
-        buzzerToggle.textContent = 'Nyalakan Buzzer';
-        buzzerToggle.classList.remove('btn-danger');
-        buzzerToggle.classList.add('btn-primary');
-      } else {
-        buzzerToggle.textContent = 'Status Buzzer Tidak Diketahui';
-        buzzerToggle.classList.remove('btn-danger', 'btn-primary');
-      }
-    }
+async function getDeviceStatus(device) {
+  try {
+    const response = await fetch('/device/' + device);
+    if (!response.ok) throw new Error('Gagal ambil status device');
+    const data = await response.json();
+    return data.status;
+  } catch (err) {
+    console.error('Gagal ambil status device:', err);
+    return null;
+  }
+}
 
-    document.getElementById('btnBuzzerToggle').addEventListener('click', async () => {
-      const buzzerToggle = document.getElementById('btnBuzzerToggle');
-      const currentStatus = buzzerToggle.textContent.includes('Matikan') ? 'on' : 'off';
-      const newStatus = currentStatus === 'on' ? 'off' : 'on';
-      await sendCommand('buzzer', newStatus);
-      await updateBuzzerUI();
-    });
+async function updateBuzzerUI() {
+  const buzzerToggle = document.getElementById('btnBuzzerToggle');
+  const status = await getDeviceStatus('buzzer');
+  if (status === 'on') {
+    buzzerToggle.textContent = 'Matikan Buzzer';
+    buzzerToggle.classList.remove('btn-primary');
+    buzzerToggle.classList.add('btn-danger');
+  } else if (status === 'off') {
+    buzzerToggle.textContent = 'Nyalakan Buzzer';
+    buzzerToggle.classList.remove('btn-danger');
+    buzzerToggle.classList.add('btn-primary');
+  } else {
+    buzzerToggle.textContent = 'Status Buzzer Tidak Diketahui';
+    buzzerToggle.classList.remove('btn-danger', 'btn-primary');
+  }
+}
 
-    updateBuzzerUI();
+document.getElementById('btnBuzzerToggle').addEventListener('click', async () => {
+  const buzzerToggle = document.getElementById('btnBuzzerToggle');
+  const currentStatus = buzzerToggle.textContent.includes('Matikan') ? 'on' : 'off';
+  const newStatus = currentStatus === 'on' ? 'off' : 'on';
+  await sendCommand('buzzer', newStatus);
+  await updateBuzzerUI();
+});
+
+// Mulai polling saat pertama kali halaman dibuka
+intervalId = setInterval(updateSnapshot, 5000);
+updateSnapshot();
+updateBuzzerUI();
+
   </script>
 
 </body>
