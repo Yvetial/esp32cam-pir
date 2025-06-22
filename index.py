@@ -48,3 +48,8 @@ def control_buzzer():
         return jsonify({"status": "success", "device": "buzzer", "new_status": status})
 
     return jsonify({"device": "buzzer", "status": device_status["buzzer"]})
+
+@app.route("/device/camera")
+def camera_status():
+    return jsonify({"status": "online"})
+
