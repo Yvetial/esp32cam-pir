@@ -34,7 +34,7 @@
   <script>
     let intervalId = null;
     let retryCount = 0;
-    const MAX_RETRY = 3;
+    const MAX_RETRY = 1;
     let isPollingStopped = false;
 
     async function checkSnapshotStatus() {
@@ -174,7 +174,7 @@ document.getElementById('btnBuzzerToggle').addEventListener('click', async () =>
 intervalId = setInterval(() => {
   updateSnapshot();
   checkSnapshotFreshness();
-}, 3000);
+}, 2000);
 updateSnapshot();
 updateBuzzerUI();
 
