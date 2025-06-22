@@ -92,14 +92,14 @@ body {
   
   h3.snapshot-title {
     font-size: 2.1rem;
-    font-weight: 800;
+    font-weight: 600;
     margin-bottom: 1rem;
   }
   
   h3.snapshot-title small {
     display: block;
     font-size: 1.4rem;
-    font-weight: 600;
+    font-weight: 400;
     margin-top: 0.2rem;
   }
   
