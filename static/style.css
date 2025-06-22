@@ -74,7 +74,7 @@ body {
   img#snapshotImage {
     margin-top: 15px;
     width: 100%;
-    max-width: 100%;
+    max-width: 550px;
     height: auto;
     border-radius: 1rem;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
@@ -91,14 +91,14 @@ body {
   }
   
   h3.snapshot-title {
-    font-size: 1.6rem;     /* sebelumnya 2.1rem */
+    font-size: 1.8rem;     /* sebelumnya 2.1rem */
     font-weight: 500;      /* sebelumnya 600 */
     margin-bottom: 0.8rem; /* sedikit dikurangi */
   }
   
   h3.snapshot-title small {
     display: block;
-    font-size: 1.1rem;     /* sebelumnya 1.4rem */
+    font-size: 1.4rem;     /* sebelumnya 1.4rem */
     font-weight: 300;      /* sebelumnya 400 */
     margin-top: 0.2rem;
   }
